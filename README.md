@@ -11,3 +11,4 @@ The NYC Parks app is Elijah Morton's January 2026 Winter Term project for Oberli
  - Pull up `main.dart` and hit the start button in VSCode.
 
 Created by Elijah Morton
+Authentication code courtesy of [Rivaan Ranawat](https://github.com/RivaanRanawat/flutter_node_auth)
