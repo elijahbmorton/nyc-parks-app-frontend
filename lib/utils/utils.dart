@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_node_auth/models/person.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
@@ -40,3 +41,5 @@ bool? toBoolean(String? string) {
           ? false
           : null);
 }
+
+AssetImage profileImageUri (ProfileImageImage image) => AssetImage('assets/images/profileImages/${image.name}.png');

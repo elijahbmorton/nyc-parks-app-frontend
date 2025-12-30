@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_node_auth/models/user.dart';
 import 'package:flutter_node_auth/providers/user_provider.dart';
 import 'package:flutter_node_auth/screens/home_screen.dart';
+import 'package:flutter_node_auth/screens/map_screen.dart';
 import 'package:flutter_node_auth/screens/signup_screen.dart';
 import 'package:flutter_node_auth/utils/constants.dart';
 import 'package:flutter_node_auth/utils/utils.dart';
@@ -96,7 +97,7 @@ class AuthService {
           await prefs.setString('x-auth-token', jsonDecode(res.body)['token']);
           navigator.pushAndRemoveUntil(
             MaterialPageRoute(
-              builder: (context) => const HomeScreen(),
+              builder: (context) => const MapScreen(),
             ),
             (route) => false,
           );

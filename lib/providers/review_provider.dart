@@ -31,7 +31,7 @@ class ReviewProvider extends ChangeNotifier {
         'comments': review['comments'],
         'rating': review['rating'],
         'favorite': review['favorite'],
-        'author': review['author'],
+        'author': review['User'],
       }));
     }
     notifyListeners();
