@@ -1,19 +1,24 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_node_auth/models/user.dart';
-import 'package:flutter_node_auth/providers/user_provider.dart';
-import 'package:flutter_node_auth/screens/home_screen.dart';
-import 'package:flutter_node_auth/screens/map_screen.dart';
-import 'package:flutter_node_auth/screens/signup_screen.dart';
-import 'package:flutter_node_auth/utils/constants.dart';
-import 'package:flutter_node_auth/utils/utils.dart';
+import 'package:nyc_parks/models/logged_in_user.dart';
+import 'package:nyc_parks/providers/logged_in_user_provider.dart';
+import 'package:nyc_parks/screens/signup_screen.dart';
+import 'package:nyc_parks/utils/constants.dart';
+import 'package:nyc_parks/utils/utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthService {
+  // Secure storage instance for token persistence
+  static const _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+  );
+  
+  static const _tokenKey = 'x-auth-token';
+
   void signUpUser({
     required BuildContext context,
     required String email,
@@ -26,7 +31,7 @@ class AuthService {
       }
 
     try {
-      User user = User(
+      LoggedInUser user = LoggedInUser(
         id: 0,
         name: name,
         password: password,
@@ -71,8 +76,7 @@ class AuthService {
         return;
       }
 
-      var userProvider = Provider.of<UserProvider>(context, listen: false);
-      final navigator = Navigator.of(context);
+      var loggedInUserProvider = Provider.of<LoggedInUserProvider>(context, listen: false);
 
       http.Response res = await http.post(
         Uri.parse('${Constants.uri}/auth/signin'),
@@ -92,15 +96,18 @@ class AuthService {
       httpErrorHandle(
         response: res,
         onSuccess: () async {
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          userProvider.setUser(res.body);
-          await prefs.setString('x-auth-token', jsonDecode(res.body)['token']);
-          navigator.pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => const MapScreen(),
-            ),
-            (route) => false,
+          loggedInUserProvider.setUser(res.body);
+          // Store token securely
+          final token = jsonDecode(res.body)['token'];
+          await _storage.write(
+            key: _tokenKey, 
+            value: token,
           );
+          // Verify it was saved
+          final savedToken = await _storage.read(key: _tokenKey);
+          if (context.mounted) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
         },
       );
     } catch (e) {
@@ -108,24 +115,30 @@ class AuthService {
     }
   }
 
+  // Get stored token
+  static Future<String?> getToken() async {
+    return await _storage.read(key: _tokenKey);
+  }
+
   // get user data
-  void getUserData(
+  Future<void> getUserData(
     BuildContext context,
   ) async {
+    var loggedInUserProvider = Provider.of<LoggedInUserProvider>(context, listen: false);
+    String? token = await _storage.read(key: _tokenKey);
+
+
+    if (token == null || token.isEmpty) {
+      loggedInUserProvider.setChecking(false);
+      return;
+    }
+
     try {
-      var userProvider = Provider.of<UserProvider>(context, listen: false);
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? token = prefs.getString('x-auth-token');
-
-      if (token == null) {
-        prefs.setString('x-auth-token', '');
-      }
-
       var tokenRes = await http.post(
         Uri.parse('${Constants.uri}/auth/tokenIsValid'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          'x-auth-token': token!,
+          'x-auth-token': token,
         },
       );
 
@@ -134,24 +147,32 @@ class AuthService {
       if (response == true) {
         http.Response userRes = await http.get(
           Uri.parse('${Constants.uri}/auth/getToken'),
-          headers: <String, String>{'Content-Type': 'application/json; charset=UTF-8', 'x-auth-token': token},
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8', 
+            'x-auth-token': token,
+          },
         );
 
-        userProvider.setUser(userRes.body);
+        loggedInUserProvider.setUser(userRes.body);
+
+        if (context.mounted) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      } else {
+        // Token invalid, clear it
+        await _storage.delete(key: _tokenKey);
+        loggedInUserProvider.setChecking(false);
       }
     } catch (e) {
-      if (context.mounted) {
-        showSnackBar(e.toString());
-      } else {
-        log('Error logging in. $e');
-      }
+      // Network error or other issue
+      loggedInUserProvider.setChecking(false);
     }
   }
 
   void signOut(BuildContext context) async {
     final navigator = Navigator.of(context);
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('x-auth-token', '');
+    // Clear secure storage
+    await _storage.delete(key: _tokenKey);
     navigator.pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (context) => const SignupScreen(),

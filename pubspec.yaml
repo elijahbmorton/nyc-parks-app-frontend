@@ -1,5 +1,5 @@
-name: flutter_node_auth
-description: A new Flutter project.
+name: nyc_parks
+description: Review, rate, and keep track of the NYC parks you've visited! Keep up with the parks your friends visit!
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -18,7 +18,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.17.6 <3.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -33,20 +33,26 @@ dependencies:
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
   csv: ^6.0.0
-
-dependency_overrides:
-  file: ^7.0.0
-  http: ^1.6.0
+  flex_color_scheme: ^8.4.0
+  flutter_map_location_marker: any
+  google_fonts: ^7.0.2
+  url_launcher: ^6.2.5
+  flutter_secure_storage: ^9.0.0
+  flutter_map_animations: ^0.8.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
-  provider: ^6.0.3
-  shared_preferences: ^2.0.15
+  provider: ^6.1.2
+  http: ^1.2.0
+
+dependency_overrides:
+  win32: ^5.5.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.4
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -54,6 +60,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
+  asset_fill: ^2.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -64,7 +71,232 @@ flutter:
   # Assets
   assets:
     - assets/
+    - assets/icon/
+    - assets/images/
     - assets/images/profileImages/
+    - assets/tiles/
+    - assets/tiles/10/
+    - assets/tiles/10/300/
+    - assets/tiles/10/301/
+    - assets/tiles/10/302/
+    - assets/tiles/10/303/
+    - assets/tiles/11/
+    - assets/tiles/11/600/
+    - assets/tiles/11/601/
+    - assets/tiles/11/602/
+    - assets/tiles/11/603/
+    - assets/tiles/11/604/
+    - assets/tiles/11/605/
+    - assets/tiles/11/606/
+    - assets/tiles/12/
+    - assets/tiles/12/1203/
+    - assets/tiles/12/1204/
+    - assets/tiles/12/1205/
+    - assets/tiles/12/1206/
+    - assets/tiles/12/1207/
+    - assets/tiles/12/1208/
+    - assets/tiles/12/1209/
+    - assets/tiles/13/
+    - assets/tiles/13/2406/
+    - assets/tiles/13/2407/
+    - assets/tiles/13/2408/
+    - assets/tiles/13/2409/
+    - assets/tiles/13/2410/
+    - assets/tiles/13/2411/
+    - assets/tiles/13/2412/
+    - assets/tiles/13/2413/
+    - assets/tiles/13/2414/
+    - assets/tiles/13/2415/
+    - assets/tiles/13/2416/
+    - assets/tiles/13/2417/
+    - assets/tiles/13/2418/
+    - assets/tiles/14/
+    - assets/tiles/14/4812/
+    - assets/tiles/14/4813/
+    - assets/tiles/14/4814/
+    - assets/tiles/14/4815/
+    - assets/tiles/14/4816/
+    - assets/tiles/14/4817/
+    - assets/tiles/14/4818/
+    - assets/tiles/14/4819/
+    - assets/tiles/14/4820/
+    - assets/tiles/14/4821/
+    - assets/tiles/14/4822/
+    - assets/tiles/14/4823/
+    - assets/tiles/14/4824/
+    - assets/tiles/14/4825/
+    - assets/tiles/14/4826/
+    - assets/tiles/14/4827/
+    - assets/tiles/14/4828/
+    - assets/tiles/14/4829/
+    - assets/tiles/14/4830/
+    - assets/tiles/14/4831/
+    - assets/tiles/14/4832/
+    - assets/tiles/14/4833/
+    - assets/tiles/14/4834/
+    - assets/tiles/14/4835/
+    - assets/tiles/14/4836/
+    - assets/tiles/14/4837/
+    - assets/tiles/14/4838/
+    - assets/tiles/15/
+    - assets/tiles/15/9625/
+    - assets/tiles/15/9626/
+    - assets/tiles/15/9627/
+    - assets/tiles/15/9628/
+    - assets/tiles/15/9629/
+    - assets/tiles/15/9630/
+    - assets/tiles/15/9631/
+    - assets/tiles/15/9632/
+    - assets/tiles/15/9633/
+    - assets/tiles/15/9634/
+    - assets/tiles/15/9635/
+    - assets/tiles/15/9636/
+    - assets/tiles/15/9637/
+    - assets/tiles/15/9638/
+    - assets/tiles/15/9639/
+    - assets/tiles/15/9640/
+    - assets/tiles/15/9641/
+    - assets/tiles/15/9642/
+    - assets/tiles/15/9643/
+    - assets/tiles/15/9644/
+    - assets/tiles/15/9645/
+    - assets/tiles/15/9646/
+    - assets/tiles/15/9647/
+    - assets/tiles/15/9648/
+    - assets/tiles/15/9649/
+    - assets/tiles/15/9650/
+    - assets/tiles/15/9651/
+    - assets/tiles/15/9652/
+    - assets/tiles/15/9653/
+    - assets/tiles/15/9654/
+    - assets/tiles/15/9655/
+    - assets/tiles/15/9656/
+    - assets/tiles/15/9657/
+    - assets/tiles/15/9658/
+    - assets/tiles/15/9659/
+    - assets/tiles/15/9660/
+    - assets/tiles/15/9661/
+    - assets/tiles/15/9662/
+    - assets/tiles/15/9663/
+    - assets/tiles/15/9664/
+    - assets/tiles/15/9665/
+    - assets/tiles/15/9666/
+    - assets/tiles/15/9667/
+    - assets/tiles/15/9668/
+    - assets/tiles/15/9669/
+    - assets/tiles/15/9670/
+    - assets/tiles/15/9671/
+    - assets/tiles/15/9672/
+    - assets/tiles/15/9673/
+    - assets/tiles/15/9674/
+    - assets/tiles/15/9675/
+    - assets/tiles/15/9676/
+    - assets/tiles/16/
+    - assets/tiles/16/19250/
+    - assets/tiles/16/19251/
+    - assets/tiles/16/19252/
+    - assets/tiles/16/19253/
+    - assets/tiles/16/19254/
+    - assets/tiles/16/19255/
+    - assets/tiles/16/19256/
+    - assets/tiles/16/19257/
+    - assets/tiles/16/19258/
+    - assets/tiles/16/19259/
+    - assets/tiles/16/19260/
+    - assets/tiles/16/19261/
+    - assets/tiles/16/19262/
+    - assets/tiles/16/19263/
+    - assets/tiles/16/19264/
+    - assets/tiles/16/19265/
+    - assets/tiles/16/19266/
+    - assets/tiles/16/19267/
+    - assets/tiles/16/19268/
+    - assets/tiles/16/19269/
+    - assets/tiles/16/19270/
+    - assets/tiles/16/19271/
+    - assets/tiles/16/19272/
+    - assets/tiles/16/19273/
+    - assets/tiles/16/19274/
+    - assets/tiles/16/19275/
+    - assets/tiles/16/19276/
+    - assets/tiles/16/19277/
+    - assets/tiles/16/19278/
+    - assets/tiles/16/19279/
+    - assets/tiles/16/19280/
+    - assets/tiles/16/19281/
+    - assets/tiles/16/19282/
+    - assets/tiles/16/19283/
+    - assets/tiles/16/19284/
+    - assets/tiles/16/19285/
+    - assets/tiles/16/19286/
+    - assets/tiles/16/19287/
+    - assets/tiles/16/19288/
+    - assets/tiles/16/19289/
+    - assets/tiles/16/19290/
+    - assets/tiles/16/19291/
+    - assets/tiles/16/19292/
+    - assets/tiles/16/19293/
+    - assets/tiles/16/19294/
+    - assets/tiles/16/19295/
+    - assets/tiles/16/19296/
+    - assets/tiles/16/19297/
+    - assets/tiles/16/19298/
+    - assets/tiles/16/19299/
+    - assets/tiles/16/19300/
+    - assets/tiles/16/19301/
+    - assets/tiles/16/19302/
+    - assets/tiles/16/19303/
+    - assets/tiles/16/19304/
+    - assets/tiles/16/19305/
+    - assets/tiles/16/19306/
+    - assets/tiles/16/19307/
+    - assets/tiles/16/19308/
+    - assets/tiles/16/19309/
+    - assets/tiles/16/19310/
+    - assets/tiles/16/19311/
+    - assets/tiles/16/19312/
+    - assets/tiles/16/19313/
+    - assets/tiles/16/19314/
+    - assets/tiles/16/19315/
+    - assets/tiles/16/19316/
+    - assets/tiles/16/19317/
+    - assets/tiles/16/19318/
+    - assets/tiles/16/19319/
+    - assets/tiles/16/19320/
+    - assets/tiles/16/19321/
+    - assets/tiles/16/19322/
+    - assets/tiles/16/19323/
+    - assets/tiles/16/19324/
+    - assets/tiles/16/19325/
+    - assets/tiles/16/19326/
+    - assets/tiles/16/19327/
+    - assets/tiles/16/19328/
+    - assets/tiles/16/19329/
+    - assets/tiles/16/19330/
+    - assets/tiles/16/19331/
+    - assets/tiles/16/19332/
+    - assets/tiles/16/19333/
+    - assets/tiles/16/19334/
+    - assets/tiles/16/19335/
+    - assets/tiles/16/19336/
+    - assets/tiles/16/19337/
+    - assets/tiles/16/19338/
+    - assets/tiles/16/19339/
+    - assets/tiles/16/19340/
+    - assets/tiles/16/19341/
+    - assets/tiles/16/19342/
+    - assets/tiles/16/19343/
+    - assets/tiles/16/19344/
+    - assets/tiles/16/19345/
+    - assets/tiles/16/19346/
+    - assets/tiles/16/19347/
+    - assets/tiles/16/19348/
+    - assets/tiles/16/19349/
+    - assets/tiles/16/19350/
+    - assets/tiles/16/19351/
+    - assets/tiles/16/19352/
+    - assets/tiles/16/19353/
+    - assets/tiles/16/19354/
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

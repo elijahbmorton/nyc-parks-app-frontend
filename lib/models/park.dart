@@ -2,6 +2,25 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:csv/csv.dart';
+import 'package:flutter/material.dart';
+import 'package:nyc_parks/utils/constants.dart';
+
+String boroughFromCode(String? code) {
+  switch (code?.toUpperCase()) {
+    case 'B':
+      return 'Brooklyn';
+    case 'M':
+      return 'Manhattan';
+    case 'X':
+      return 'Bronx';
+    case 'R':
+      return 'Staten Island';
+    case 'Q':
+      return 'Queens';
+    default:
+      return code ?? '';
+  }
+}
 
 class Park {	
   // TODO: figure out which are actually required
@@ -38,6 +57,9 @@ class Park {
   final String? WATERFRONT;
   final String? ZIPCODE;
   final String? multipolygon;
+
+  /// Returns the full borough name from the single-character code
+  String get boroughName => boroughFromCode(BOROUGH);
 
   Park({
     this.ACQUISITIONDATE,
@@ -110,6 +132,8 @@ class Park {
       'multipolygon': multipolygon,
     };
   }
+
+  IconData get typeCategoryIcon => Constants.typeCategoryIcons[TYPECATEGORY ?? ''] ?? Icons.park; // fallback
 
   factory Park.fromMap(Map<String, dynamic> map) {
     return Park(

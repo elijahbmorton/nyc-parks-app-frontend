@@ -1,40 +1,92 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
+import 'package:nyc_parks/utils/utils.dart';
+
+enum ProfileImageImage { canada_anemone, common_milkweed, great_blue_lobelia, joe_pye_weed, northern_blue_flag, smooth_blue_aster, smooth_white_beardtongue, sneezeweed, trumpet_honeysuckle, wild_bergamot }
+enum ProfileImageBackgroundColor { blue, purple, green, yellow, orange, red, brown }
+
+Color colorFromProfileImageBackgroundColor(ProfileImageBackgroundColor input) {
+  switch (input) {
+    case ProfileImageBackgroundColor.blue:
+      return Colors.blue;
+    case ProfileImageBackgroundColor.purple:
+      return Colors.purple;
+    case ProfileImageBackgroundColor.green:
+      return Colors.green;
+    case ProfileImageBackgroundColor.yellow:
+      return Colors.yellow;
+    case ProfileImageBackgroundColor.orange:
+      return Colors.orange;
+    case ProfileImageBackgroundColor.red:
+      return Colors.red;
+    case ProfileImageBackgroundColor.brown:
+      return Colors.brown;
+    // Not needed but whatever
+    default:
+      return Colors.purple;
+  }
+}
+
+class ProfileImage {
+  final ProfileImageImage image;
+  final ProfileImageBackgroundColor backgroundColor;
+
+  ProfileImage({required this.image, required this.backgroundColor});
+  
+  Map<String, dynamic> toMap() {
+    return {
+      'image': image,
+      'backgroundColor': backgroundColor,
+    };
+  }
+
+  factory ProfileImage.fromMap(Map<String, dynamic> map) {
+    if (map['image'] == null || map['backgroundColor'] == null) {
+      throw ArgumentError('Invalid ProfileImage data: both fields must be non-null.');
+    }
+
+    return ProfileImage(
+      image: ProfileImageImage.values.byName(map['image']),
+      backgroundColor: ProfileImageBackgroundColor.values.byName(map['backgroundColor']),
+    );
+  }
+
+  String toJson() => json.encode({
+    'image': image.name,
+    'backgroundColor': backgroundColor.name,
+  });
+
+  factory ProfileImage.fromJson(String source) => ProfileImage.fromMap(json.decode(source));
+}
+
 class User {
   final int id;
   final String name;
-  final String email;
-  final String token;
-  final String? password;
+  ProfileImage? profileImage;
+  final bool? friendsWithLoggedInUser;
   final String? createdAt;
-  User({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.token,
-    this.password,
-    this.createdAt,
-  });
+  User({required this.id, required this.name, this.profileImage, this.friendsWithLoggedInUser, this.createdAt});
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'name': name,
-      'email': email,
-      'token': token,
-      'password': password,
+      'profileImage': profileImage,
+      'friendsWithLoggedInUser': friendsWithLoggedInUser,
       'createdAt': createdAt,
     };
   }
 
   factory User.fromMap(Map<String, dynamic> map) {
     return User(
-      id: map['id'] ?? 0,
+      id: map['id'] is int ? map['id'] : int.tryParse(map['id']?.toString() ?? '0') ?? 0,
       name: map['name'] ?? '',
-      email: map['email'] ?? '',
-      token: map['token'] ?? '',
-      password: map['password'] ?? '',
-      createdAt: map['createdAt'] ?? '',
+      profileImage: map['profileImage'] != null
+          ? ProfileImage.fromMap(map['profileImage'])
+          : null,
+      friendsWithLoggedInUser: toBoolean(map['friendsWithLoggedInUser']),
+      createdAt: map['createdAt'],
     );
   }
 

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_node_auth/models/person.dart';
+import 'package:nyc_parks/models/user.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
@@ -43,3 +43,5 @@ bool? toBoolean(String? string) {
 }
 
 AssetImage profileImageUri (ProfileImageImage image) => AssetImage('assets/images/profileImages/${image.name}.png');
+
+String toTitleCase(String s) => s.split(' ').map((word) => word.isEmpty ? '' : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}').join(' ');

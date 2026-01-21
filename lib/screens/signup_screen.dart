@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_node_auth/custom_textfield.dart';
-import 'package:flutter_node_auth/screens/login_screen.dart';
-import 'package:flutter_node_auth/services/auth_services.dart';
+import 'package:nyc_parks/components/custom_textfield.dart';
+import 'package:nyc_parks/screens/login_screen.dart';
+import 'package:nyc_parks/services/auth_services.dart';
 
 // Tutorial:
 // https://www.youtube.com/watch?v=EuP3xycjiM4

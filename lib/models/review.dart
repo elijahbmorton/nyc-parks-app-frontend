@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter_node_auth/models/person.dart';
+import 'package:nyc_parks/models/user.dart';
 
 class Review {
   final int id;
@@ -8,8 +8,9 @@ class Review {
   final String? comments;
   final int rating;
   final bool favorite;
-  final Person author;
-  Review({required this.id, required this.parkId, this.comments, required this.rating, required this.favorite, required this.author});
+  final User author;
+  final String? createdAt;
+  Review({required this.id, required this.parkId, this.comments, required this.rating, required this.favorite, required this.author, this.createdAt});
 
   Map<String, dynamic> toMap() {
     return {
@@ -19,6 +20,7 @@ class Review {
       'rating': rating,
       'favorite': favorite,
       'author': author,
+      'createdAt': createdAt,
     };
   }
 
@@ -29,7 +31,8 @@ class Review {
       comments: map['comments'] ?? '',
       rating: map['rating'],
       favorite: map['favorite'],
-      author: Person.fromMap(map['author']),
+      author: User.fromMap(map['author']),
+      createdAt: map['createdAt'],
     );
   }
 

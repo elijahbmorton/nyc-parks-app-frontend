@@ -1,4 +1,4 @@
-package com.example.flutter_node_auth
+package com.example.nyc_parks
 
 import io.flutter.embedding.android.FlutterActivity
 

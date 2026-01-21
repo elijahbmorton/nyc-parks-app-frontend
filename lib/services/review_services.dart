@@ -1,21 +1,17 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_node_auth/models/person.dart';
-import 'package:flutter_node_auth/models/review.dart';
-import 'package:flutter_node_auth/models/user.dart';
-import 'package:flutter_node_auth/providers/park_provider.dart';
-import 'package:flutter_node_auth/providers/review_provider.dart';
-import 'package:flutter_node_auth/providers/user_provider.dart';
-import 'package:flutter_node_auth/screens/home_screen.dart';
-import 'package:flutter_node_auth/screens/map_screen.dart';
-import 'package:flutter_node_auth/screens/signup_screen.dart';
-import 'package:flutter_node_auth/utils/constants.dart';
-import 'package:flutter_node_auth/utils/utils.dart';
+import 'package:nyc_parks/models/user.dart';
+import 'package:nyc_parks/models/review.dart';
+import 'package:nyc_parks/providers/park_provider.dart';
+import 'package:nyc_parks/providers/review_provider.dart';
+import 'package:nyc_parks/providers/logged_in_user_provider.dart';
+import 'package:nyc_parks/screens/map_screen.dart';
+import 'package:nyc_parks/utils/constants.dart';
+import 'package:nyc_parks/utils/utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:nyc_parks/services/auth_services.dart';
 
 class ReviewService {
   void addReview({
@@ -23,14 +19,14 @@ class ReviewService {
   }) async {
     try {
       var review = Provider.of<ReviewProvider>(context, listen: false).review;
-      var user = Provider.of<UserProvider>(context, listen: false).user;
+      var loggedInUser = Provider.of<LoggedInUserProvider>(context, listen: false).user;
 
       final navigator = Navigator.of(context);
       http.Response res = await http.post(
         Uri.parse('${Constants.uri}/review/addReview'),
         body: jsonEncode({
           'review': review,
-          'userId': user.id,
+          'userId': loggedInUser.id,
         }),
         headers: Constants.headers,
       );
@@ -67,15 +63,14 @@ class ReviewService {
     try {
       final Map<String, String> queryParameters = { 'parkId': parkId, 'userId': userId.toString(), };
 
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? token = prefs.getString('x-auth-token');
+      String token = await AuthService.getToken() ?? '';
 
       // TODO: This might need to be https?? in prod
       // And in other places. Also fix having to put /api here
       var uri = Uri.http(Constants.uriNoProtocol, '/api/review/reviewsFromPark', queryParameters);
       http.Response res = await http.get(
         uri,
-        headers: <String, String>{'Content-Type': 'application/json; charset=UTF-8', 'x-auth-token': token!},
+        headers: <String, String>{'Content-Type': 'application/json; charset=UTF-8', 'x-auth-token': token},
       );
 
       if (!context.mounted) {
@@ -83,16 +78,21 @@ class ReviewService {
         return;
       }
 
-      Provider.of<ReviewProvider>(context, listen: false).setReviews(res.body);
+      Provider.of<ReviewProvider>(context, listen: false).setReviews(context: context, reviews: res.body);
     } catch (e) {
       print(e);
       //showSnackBar(e.toString());
     }
   }
 
-  Review validateAndCreateReview(BuildContext context, String? comments, String rating, bool favorite) {
+  Review validateAndCreateReview(BuildContext context, String? comments, String? nullableRating, bool favorite) {
+    if (nullableRating == null) {
+      throw Exception("Missing rating!");
+    }
+    String rating = nullableRating;
+    
     final park = Provider.of<ParksProvider>(context, listen: false).activePark;
-    final user = Provider.of<UserProvider>(context, listen: false).user;
+    final loggedInUser = Provider.of<LoggedInUserProvider>(context, listen: false).user;
 
     // Rating int conversion and validation
     int? ratingInt;
@@ -115,7 +115,7 @@ class ReviewService {
         comments: comments,
         rating: ratingInt,
         favorite: favorite,
-        author: Person(id: user.id, name: user.name),
+        author: User(id: loggedInUser.id, name: loggedInUser.name),
       );
     } catch (e) {
       throw Exception("Couldn't create the review. $e");

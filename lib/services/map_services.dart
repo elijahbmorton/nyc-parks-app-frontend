@@ -1,8 +1,8 @@
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:csv/csv.dart';
-import 'package:flutter_node_auth/models/park.dart';
-import 'package:flutter_node_auth/utils/utils.dart';
+import 'package:nyc_parks/models/park.dart';
+import 'package:nyc_parks/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';

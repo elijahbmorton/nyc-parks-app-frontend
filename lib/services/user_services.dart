@@ -1,48 +1,36 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_node_auth/models/person.dart';
-import 'package:flutter_node_auth/models/review.dart';
-import 'package:flutter_node_auth/models/user.dart';
-import 'package:flutter_node_auth/providers/park_provider.dart';
-import 'package:flutter_node_auth/providers/review_provider.dart';
-import 'package:flutter_node_auth/providers/user_provider.dart';
-import 'package:flutter_node_auth/screens/home_screen.dart';
-import 'package:flutter_node_auth/screens/map_screen.dart';
-import 'package:flutter_node_auth/screens/signup_screen.dart';
-import 'package:flutter_node_auth/utils/constants.dart';
-import 'package:flutter_node_auth/utils/utils.dart';
+import 'package:nyc_parks/models/user.dart';
+import 'package:nyc_parks/providers/logged_in_user_provider.dart';
+import 'package:nyc_parks/utils/constants.dart';
+import 'package:nyc_parks/utils/utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:nyc_parks/services/auth_services.dart';
 
 class UserService {
 
   Future<Map<String, dynamic>?> getUserInfo({
     required BuildContext context,
+    required int userId
   }) async {
     try {
-      final user = Provider.of<UserProvider>(context, listen: false).user;
-
-      // TODO: Make custom get and post functions
-      // So I don't have to do this bullshit every time
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? token = prefs.getString('x-auth-token');
+      String token = await AuthService.getToken() ?? '';
 
       // TODO: Fix this uri var
       //var uri = Uri.http(Constants.uriNoProtocol, '/api/user/userInfo', { 'userId': user.id });
-      var uri = 'http://localhost:5200/api/user/userInfo?userId=${user.id}';
+      var uri = 'http://localhost:5200/api/user/userInfo?userId=${userId}';
       http.Response res = await http.get(
         Uri.parse(uri),
-        headers: <String, String>{'Content-Type': 'application/json; charset=UTF-8', 'x-auth-token': token!},
+        headers: <String, String>{'Content-Type': 'application/json; charset=UTF-8', 'x-auth-token': token},
       );
 
       httpErrorHandle(
         response: res,
         onSuccess: () async {},
       );
-
+      
       return json.decode(res.body);
     } catch (e) {
       print(e);
@@ -50,4 +38,37 @@ class UserService {
     }
   }
 
+  Future<bool> updateProfileImage({
+    required BuildContext context,
+    required ProfileImage profileImage
+  }) async {
+    try {
+      final loggedInUserProvider = Provider.of<LoggedInUserProvider>(context, listen: false);
+      final loggedInUser = loggedInUserProvider.user;
+
+      String token = await AuthService.getToken() ?? '';
+
+      http.Response res = await http.post(
+        Uri.parse('${Constants.uri}/user/updateProfileImage'),
+        body: jsonEncode({
+          'profileImage': profileImage.toJson(),
+          'userId': loggedInUser.id,
+        }),
+        headers: <String, String>{'Content-Type': 'application/json; charset=UTF-8', 'x-auth-token': token},
+      );
+
+      httpErrorHandle(
+        response: res,
+        onSuccess: () async {
+          loggedInUserProvider.setUserProfileImage(profileImage);
+          Navigator.pop(context, true);
+        },
+      );
+
+      return true;
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
 }

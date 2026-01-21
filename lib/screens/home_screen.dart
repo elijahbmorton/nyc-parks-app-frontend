@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_node_auth/providers/user_provider.dart';
-import 'package:flutter_node_auth/screens/map_screen.dart';
-import 'package:flutter_node_auth/services/auth_services.dart';
-import 'package:flutter_node_auth/services/map_services.dart';
-import 'package:flutter_node_auth/utils/utils.dart';
+import 'package:nyc_parks/providers/logged_in_user_provider.dart';
+import 'package:nyc_parks/screens/map_screen.dart';
+import 'package:nyc_parks/services/auth_services.dart';
+import 'package:nyc_parks/services/map_services.dart';
+import 'package:nyc_parks/utils/utils.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -15,16 +15,16 @@ class HomeScreen extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<UserProvider>(context).user;
+    final user = Provider.of<LoggedInUserProvider>(context).user;
 
     return Scaffold(
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text("TESTING!!!", style: TextStyle(backgroundColor: Colors.black, color: Colors.black),),
-          Text(user.id.toString(), style: TextStyle(color: Colors.black),),
-          Text(user.email),
-          Text(user.name),
+          Text(user?.id.toString() ?? '', style: TextStyle(color: Colors.black),),
+          Text(user?.email ?? ''),
+          Text(user?.name ?? ''),
           ElevatedButton(
             onPressed: () => signOutUser(context),
             style: ButtonStyle(
