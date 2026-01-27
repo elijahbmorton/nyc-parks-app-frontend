@@ -68,17 +68,23 @@ class FriendService {
     required int userId,
     required int friendId,
   }) async {
-    // try {
+    try {
       final res = await getRequest(apiPath: '/friend/getFriendRequest', queryParameters: { 'userId': userId, 'friendId': friendId });
-      httpErrorHandle(
-        response: res,
-        onSuccess: () => {}
-      );
-      return json.decode(res.body);
-    // } catch (e) {
-    //   showSnackBar(e.toString());
-    //   return null;
-    // }
+
+      // Only handle successful responses, silently ignore errors (no friend request exists)
+      if (res.statusCode == 200) {
+        final body = json.decode(res.body);
+        // Check if it's an error response
+        if (body is Map && body['error'] != null) {
+          return null;
+        }
+        return body;
+      }
+      return null;
+    } catch (e) {
+      // Silently handle errors - no friend request exists
+      return null;
+    }
   }
 
   Future<Map<String, dynamic>?> getFriendsParks({

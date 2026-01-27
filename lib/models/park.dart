@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:nyc_parks/utils/constants.dart';
 
 String boroughFromCode(String? code) {
@@ -60,6 +61,48 @@ class Park {
 
   /// Returns the full borough name from the single-character code
   String get boroughName => boroughFromCode(BOROUGH);
+
+  /// Calculates the center point of the park by averaging all polygon coordinates
+  LatLng? getCenterPoint() {
+    if (multipolygon == null || multipolygon!.isEmpty) return null;
+
+    try {
+      final coords = <LatLng>[];
+      var wkt = multipolygon!.trim();
+
+      // Handle optional SRID prefix
+      final sridIdx = wkt.indexOf(';');
+      if (sridIdx != -1 && wkt.substring(0, sridIdx).toUpperCase().startsWith('SRID=')) {
+        wkt = wkt.substring(sridIdx + 1).trim();
+      }
+
+      // Extract coordinate pairs from the WKT string
+      final regex = RegExp(r'(-?\d+\.?\d*)\s+(-?\d+\.?\d*)');
+      final matches = regex.allMatches(wkt);
+
+      for (final match in matches) {
+        final lon = double.tryParse(match.group(1) ?? '');
+        final lat = double.tryParse(match.group(2) ?? '');
+        if (lon != null && lat != null) {
+          coords.add(LatLng(lat, lon));
+        }
+      }
+
+      if (coords.isEmpty) return null;
+
+      // Calculate average
+      double sumLat = 0;
+      double sumLon = 0;
+      for (final coord in coords) {
+        sumLat += coord.latitude;
+        sumLon += coord.longitude;
+      }
+
+      return LatLng(sumLat / coords.length, sumLon / coords.length);
+    } catch (e) {
+      return null;
+    }
+  }
 
   Park({
     this.ACQUISITIONDATE,

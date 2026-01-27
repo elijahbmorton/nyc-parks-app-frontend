@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:nyc_parks/models/park.dart';
 import 'package:nyc_parks/services/map_services.dart';
 import 'package:nyc_parks/styles/colors.dart';
@@ -8,9 +9,11 @@ import 'package:nyc_parks/utils/constants.dart';
 class ParksProvider extends ChangeNotifier {
   List<Park> _parks = [];
   Park _activePark = Park();
+  LatLng? _pendingMapZoom;
 
   List<Park> get parks => _parks;
   Park get activePark => _activePark;
+  LatLng? get pendingMapZoom => _pendingMapZoom;
 
   void setParks(List<Park> parks) {
     _parks = parks;
@@ -59,5 +62,15 @@ class ParksProvider extends ChangeNotifier {
 
   void setActiveParkFromGlobalId(String id) {
     setActivePark(parkFromGlobalId(id));
+  }
+
+  void setPendingMapZoom(LatLng? location) {
+    _pendingMapZoom = location;
+    notifyListeners();
+  }
+
+  void clearPendingMapZoom() {
+    _pendingMapZoom = null;
+    notifyListeners();
   }
 }

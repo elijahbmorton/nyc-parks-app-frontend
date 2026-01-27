@@ -204,20 +204,52 @@ class _ParkScreenState extends State<ParkScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Back button
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3),
-                    shape: BoxShape.circle,
+              // Back button and Map button row
+              Row(
+                children: [
+                  // Back button
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                    ),
                   ),
-                  child: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
-                ),
+                  const Spacer(),
+                  // Map button
+                  GestureDetector(
+                    onTap: () {
+                      final center = park.getCenterPoint();
+                      if (center != null) {
+                        // Set the pending zoom location in the provider
+                        Provider.of<ParksProvider>(context, listen: false)
+                            .setPendingMapZoom(center);
+
+                        // Pop all the way back to the map screen (first route)
+                        Navigator.of(context).popUntil((route) => route.isFirst);
+                      } else {
+                        // Just go back if no coordinates
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.location_on, color: Colors.white, size: 24),
+                    ),
+                  ),
+                ],
               ),
-              
+
               const SizedBox(height: AppSizes.spacing16),
               
               // Park type badge

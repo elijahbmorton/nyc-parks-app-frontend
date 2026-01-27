@@ -40,24 +40,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   bool locationPermissionGranted = false;
   MapViewMode viewMode = MapViewMode.myParks;
 
-  final LayerHitNotifier<Object> _parkHitNotifier = ValueNotifier(null);
-
-  void _openHitParkIfAny() {
-    final result = _parkHitNotifier.value;
-    print("Result: $result");
-    if (result == null || result.hitValues.isEmpty) return;
-
-    final id = result.hitValues.first.toString();
-    Provider.of<ParksProvider>(context, listen: false).setActiveParkFromGlobalId(id);
-
-    print("Opening park: $id");
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const ParkScreen()),
-    );
-  }
-
   @override
   void initState() {
     super.initState();
@@ -78,6 +60,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           locationPermissionGranted = false;
         });
       }
+
+      // Check for pending map zoom after initialization
+      _checkPendingMapZoom();
     });
 
     // Load park data asynchronously after map renders
@@ -86,6 +71,30 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       // Load friends parks in background
       fetchFriendsReviews();
     });
+  }
+
+  void _checkPendingMapZoom() {
+    final parksProvider = Provider.of<ParksProvider>(context, listen: false);
+    final pendingZoom = parksProvider.pendingMapZoom;
+
+    if (pendingZoom != null) {
+      // Zoom to the pending location
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _animatedMapController.animateTo(
+          dest: pendingZoom,
+          zoom: 16,
+        );
+        // Clear the pending zoom
+        parksProvider.clearPendingMapZoom();
+      });
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Check for pending zoom whenever we come back to this screen
+    _checkPendingMapZoom();
   }
 
   Future<void> fetchUserReviews() async {
@@ -162,7 +171,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _parkHitNotifier.dispose();
     _animatedMapController.dispose();
     super.dispose();
   }
@@ -175,6 +183,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       highlightedParkIds: currentReviewedParkIds,
       favoriteParkIds: currentFavoriteParkIds,
     );
+    final LayerHitNotifier<Object> parkHitNotifier = ValueNotifier(null);
 
     return Stack(
       children: [
@@ -188,42 +197,72 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             cameraConstraint: CameraConstraint.contain(
               bounds: LatLngBounds.fromPoints([const LatLng(41.30, -73.35), const LatLng(40.20, -74.50)]),
             ),
-            onTap: (_, __) => _openHitParkIfAny(),
           ),
           children: [
             TileLayer(
               // Use local tiles stored in assets
               tileProvider: AssetTileProvider(),
-              // TODO: Make this cleaner... include better zoom or alternate local and online tiles
-              // TODO: Make it sattelite view
               urlTemplate: 'assets/tiles/{z}/{x}/{y}.png',
               userAgentPackageName: 'parks_app.com.example.app',
+              // Prevent error tile overlay from showing
+              errorTileCallback: (tile, error, stackTrace) {
+                // Silently handle missing tiles
+              },
             ),
             // Old OpenStreetMap tile layer
             // TileLayer(
             //   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             //   userAgentPackageName: 'parks_app.com.example.app',
             // ),
-            PolygonLayer(
-              polygons: parksAsPolygons,
-              hitNotifier: _parkHitNotifier,
+            MouseRegion(
+              hitTestBehavior: HitTestBehavior.deferToChild,
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () async {
+                  final LayerHitResult<Object>? result = parkHitNotifier.value;
+                  if (result == null) return;
+
+                  for (final hitValue in result.hitValues) {
+                    final id = hitValue.toString();
+                    Provider.of<ParksProvider>(context, listen: false)
+                        .setActiveParkFromGlobalId(id);
+                    final navResult = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ParkScreen(),
+                      ),
+                    );
+
+                    // If a LatLng is returned, zoom to it
+                    if (navResult is LatLng) {
+                      _animatedMapController.animateTo(
+                        dest: navResult,
+                        zoom: 16,
+                      );
+                    }
+                  }
+                },
+                child: PolygonLayer(
+                  polygons: parksAsPolygons,
+                  hitNotifier: parkHitNotifier,
+                ),
+              ),
             ),
             // Location layer - only show if permission granted
             if (locationPermissionGranted) CurrentLocationLayer(),
-            // TODO: Add a better attribution widget
             RichAttributionWidget(
-              // Include a stylish prebuilt attribution widget that meets all requirments
+              popupInitialDisplayDuration: const Duration(seconds: 3),
+              animationConfig: const ScaleRAWA(),
               attributions: [
                 TextSourceAttribution(
                   'OpenStreetMap contributors',
-                  //onTap: () => launchUrl(Uri.parse('https://openstreetmap.org/copyright')), // (external)
-                  textStyle: AppTypography.bodyMedium.copyWith(
+                  textStyle: AppTypography.bodySmall.copyWith(
                     color: AppColors.textPrimary,
                     decoration: TextDecoration.none,
                   ),
                 ),
-                // Also add images...
               ],
+              alignment: AttributionAlignment.bottomRight,
             ),
           ],
         ),
@@ -240,20 +279,52 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Search button
-                  FloatingActionButton(
-                    mini: true,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSizes.iconXXLarge)),
-                    heroTag: 'search',
-                    onPressed: () {
-                      Navigator.push(
+                  GestureDetector(
+                    onTap: () async {
+                      final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const SearchScreen(),
                         ),
                       );
+
+                      // If a LatLng is returned from search, zoom to it
+                      if (result is LatLng) {
+                        _animatedMapController.animateTo(
+                          dest: result,
+                          zoom: 16,
+                        );
+                      }
                     },
-                    child: const Icon(Icons.search, size: AppSizes.iconLarge),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSizes.spacing8,
+                        vertical: AppSizes.spacing8,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primaryLight,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: AppBorderRadius.round,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.search,
+                        size: AppSizes.iconLarge,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                   // Title
                   Container(

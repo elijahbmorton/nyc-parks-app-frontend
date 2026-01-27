@@ -4,6 +4,7 @@ import 'package:nyc_parks/models/user.dart';
 import 'package:nyc_parks/providers/logged_in_user_provider.dart';
 import 'package:nyc_parks/screens/user_screen.dart';
 import 'package:nyc_parks/services/friend_services.dart';
+import 'package:nyc_parks/styles/styles.dart';
 import 'package:nyc_parks/utils/utils.dart';
 import 'package:provider/provider.dart';
 
@@ -29,10 +30,12 @@ enum FriendRequestStatus {
 
 class FriendRequestButton extends StatefulWidget {
   final Map<String, dynamic> friend;
+  final bool useWhiteStyle;
 
   const FriendRequestButton({
     super.key,
     required this.friend,
+    this.useWhiteStyle = false,
   });
 
   @override
@@ -42,16 +45,22 @@ class FriendRequestButton extends StatefulWidget {
 class _FriendRequestButtonState extends State<FriendRequestButton> {
   final FriendService friendService = FriendService();
   FriendRequestStatus friendRequestStatus = FriendRequestStatus.none;
+  int? requestSenderId; // Track who sent the friend request
 
   @override
   void initState() {
     super.initState();
     friendRequestStatus = FriendRequestStatus.fromString(widget.friend['friendRequestStatus'] ?? 'none');
+    // Try both field names - backend might use 'senderId' or 'userId' to indicate who sent the request
+    requestSenderId = (widget.friend['senderId'] ?? widget.friend['userId']) as int?;
   }
 
   void createFriendRequest(LoggedInUser loggedInUser) async {
     if (await friendService.createFriendRequest(userId: loggedInUser.id, friendId: widget.friend['id'])) {
-      setState(() => friendRequestStatus = FriendRequestStatus.pending);
+      setState(() {
+        friendRequestStatus = FriendRequestStatus.pending;
+        requestSenderId = loggedInUser.id; // You sent it
+      });
     }
   }
 
@@ -63,42 +72,94 @@ class _FriendRequestButtonState extends State<FriendRequestButton> {
 
   void cancelFriendRequest(LoggedInUser loggedInUser) async {
     if (await friendService.cancelFriendRequest(userId: loggedInUser.id, friendId: widget.friend['id'])) {
-      setState(() => friendRequestStatus = FriendRequestStatus.none);
+      setState(() {
+        friendRequestStatus = FriendRequestStatus.none;
+        requestSenderId = null;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final LoggedInUser loggedInUser = Provider.of<LoggedInUserProvider>(context).user;
+    final isWhiteStyle = widget.useWhiteStyle;
 
     // Pending
     if (friendRequestStatus == FriendRequestStatus.pending) {
-      // Cancel if you made it
-      if (widget.friend['id'] == loggedInUser.id || widget.friend['userId'] == loggedInUser.id) {
-        return (
-          TextButton(
-            onPressed: () => cancelFriendRequest(loggedInUser), 
-            child: const Text("Cancel Friend Request"),
-          )
+      // Cancel if you made it (requestSenderId is the sender)
+      if (requestSenderId == loggedInUser.id) {
+        return OutlinedButton.icon(
+          onPressed: () => cancelFriendRequest(loggedInUser),
+          icon: Icon(Icons.close, size: isWhiteStyle ? 20 : 16),
+          label: const Text('Cancel Request'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: isWhiteStyle ? Colors.white : AppColors.textSecondary,
+            side: BorderSide(
+              color: isWhiteStyle
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : AppColors.textSecondary.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+            minimumSize: Size(0, isWhiteStyle ? AppSizes.buttonHeightMedium : AppSizes.buttonHeightSmall),
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSizes.spacing12,
+              vertical: isWhiteStyle ? 0 : AppSizes.spacing8,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: AppBorderRadius.medium,
+            ),
+          ),
         );
       } else {
         // Accept if other person made it
-        return (
-          TextButton(
-            onPressed: () => acceptFriendRequest(loggedInUser), 
-            child: const Text("Accept Friend Request"),
-          )
+        return OutlinedButton.icon(
+          onPressed: () => acceptFriendRequest(loggedInUser),
+          icon: Icon(Icons.check, size: isWhiteStyle ? 20 : 16),
+          label: const Text('Accept Request'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: isWhiteStyle ? Colors.white : AppColors.success,
+            side: BorderSide(
+              color: isWhiteStyle
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : AppColors.success.withValues(alpha: 0.5),
+              width: 1.5,
+            ),
+            minimumSize: Size(0, isWhiteStyle ? AppSizes.buttonHeightMedium : AppSizes.buttonHeightSmall),
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSizes.spacing12,
+              vertical: isWhiteStyle ? 0 : AppSizes.spacing8,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: AppBorderRadius.medium,
+            ),
+          ),
         );
       }
     }
 
     // Accepted -- Cancel to remove
     if (friendRequestStatus == FriendRequestStatus.accepted) {
-      return (
-        TextButton(
-          onPressed: () => cancelFriendRequest(loggedInUser), 
-          child: const Text("Remove Friend"),
-        )
+      return OutlinedButton.icon(
+        onPressed: () => cancelFriendRequest(loggedInUser),
+        icon: Icon(Icons.person_remove_outlined, size: isWhiteStyle ? 20 : 16),
+        label: const Text('Remove Friend'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: isWhiteStyle ? Colors.white : AppColors.error,
+          side: BorderSide(
+            color: isWhiteStyle
+                ? Colors.white.withValues(alpha: 0.5)
+                : AppColors.error.withValues(alpha: 0.5),
+            width: 1.5,
+          ),
+          minimumSize: Size(0, isWhiteStyle ? AppSizes.buttonHeightMedium : AppSizes.buttonHeightSmall),
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSizes.spacing12,
+            vertical: isWhiteStyle ? 0 : AppSizes.spacing8,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: AppBorderRadius.medium,
+          ),
+        ),
       );
     }
 
@@ -106,18 +167,34 @@ class _FriendRequestButtonState extends State<FriendRequestButton> {
     // if (friendRequestStatus == FriendRequestStatus.blocked) {
     //   return (
     //     TextButton(
-    //       onPressed: () => setState(() => friendRequestStatus = FriendRequestStatus.none), 
+    //       onPressed: () => setState(() => friendRequestStatus = FriendRequestStatus.none),
     //       child: const Text("Unblock Friend"),
     //     )
     //   );
     // }
 
     // Default to add friend
-    return (
-      TextButton(
-        onPressed: () => createFriendRequest(loggedInUser), 
-        child: const Text("Add Friend"),
-      )
+    return OutlinedButton.icon(
+      onPressed: () => createFriendRequest(loggedInUser),
+      icon: Icon(Icons.person_add_outlined, size: isWhiteStyle ? 20 : 16),
+      label: const Text('Add Friend'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: isWhiteStyle ? Colors.white : AppColors.primary,
+        side: BorderSide(
+          color: isWhiteStyle
+              ? Colors.white.withValues(alpha: 0.5)
+              : AppColors.primary.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
+        minimumSize: Size(0, isWhiteStyle ? AppSizes.buttonHeightMedium : AppSizes.buttonHeightSmall),
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSizes.spacing12,
+          vertical: isWhiteStyle ? 0 : AppSizes.spacing8,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: AppBorderRadius.medium,
+        ),
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:nyc_parks/main.dart';
 import 'package:nyc_parks/models/logged_in_user.dart';
 import 'package:nyc_parks/providers/logged_in_user_provider.dart';
 import 'package:nyc_parks/screens/signup_screen.dart';
@@ -100,13 +101,16 @@ class AuthService {
           // Store token securely
           final token = jsonDecode(res.body)['token'];
           await _storage.write(
-            key: _tokenKey, 
+            key: _tokenKey,
             value: token,
           );
           // Verify it was saved
           final savedToken = await _storage.read(key: _tokenKey);
           if (context.mounted) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const AppShell()),
+              (route) => false,
+            );
           }
         },
       );
@@ -156,7 +160,10 @@ class AuthService {
         loggedInUserProvider.setUser(userRes.body);
 
         if (context.mounted) {
-          Navigator.of(context).popUntil((route) => route.isFirst);
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const AppShell()),
+            (route) => false,
+          );
         }
       } else {
         // Token invalid, clear it

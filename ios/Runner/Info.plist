@@ -43,6 +43,27 @@
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>comgooglemaps</string>
+		<string>nycgreen</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.example.nyc-parks</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>nycgreen</string>
+			</array>
+		</dict>
+	</array>
+	<!-- Uncomment when you have a domain set up -->
+	<!--
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:nycgreen.app</string>
+	</array>
+	-->
 </dict>
 </plist>

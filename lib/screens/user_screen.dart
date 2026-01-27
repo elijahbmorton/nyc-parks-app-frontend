@@ -9,11 +9,13 @@ import 'package:nyc_parks/providers/park_provider.dart';
 import 'package:nyc_parks/providers/logged_in_user_provider.dart';
 import 'package:nyc_parks/screens/choose_profile_image_screen.dart';
 import 'package:nyc_parks/screens/park_screen.dart';
+import 'package:nyc_parks/services/auth_services.dart';
 import 'package:nyc_parks/services/friend_services.dart';
 import 'package:nyc_parks/services/user_services.dart';
 import 'package:nyc_parks/styles/styles.dart';
 import 'package:nyc_parks/utils/utils.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 class UserScreen extends StatefulWidget {
   final int? userId;
@@ -67,9 +69,17 @@ class _UserScreenState extends State<UserScreen> {
     try {
       friendRequestWithLoggedInUser = await friendService.getFriendRequest(
           userId: loggedInUserId, friendId: widget.userId!);
-      setState(() {
-        friendRequestWithLoggedInUser = friendRequestWithLoggedInUser;
-      });
+      // Check if the response has an error
+      if (friendRequestWithLoggedInUser != null &&
+          friendRequestWithLoggedInUser!['error'] != null) {
+        setState(() {
+          friendRequestWithLoggedInUser = null;
+        });
+      } else {
+        setState(() {
+          friendRequestWithLoggedInUser = friendRequestWithLoggedInUser;
+        });
+      }
     } catch (e) {
       setState(() {
         friendRequestWithLoggedInUser = null;
@@ -161,7 +171,7 @@ Future<void> fetchUserInfo({bool showLoader = true}) async {
                               children: [
                                 const Icon(Icons.people_outline, size: 18),
                                 const SizedBox(width: 8),
-                                Text('Friends (${userInfo['friends']?.length ?? 0})'),
+                                Text('Friends (${_getAcceptedFriends().length})'),
                               ],
                             ),
                           ),
@@ -403,13 +413,142 @@ Future<void> fetchUserInfo({bool showLoader = true}) async {
               // Friend request button (for non-logged-in users)
               if (!isLoggedInUser && user != null) ...[
                 const SizedBox(height: AppSizes.spacing16),
-                FriendRequestButton(
-                  friend: {
-                    ...user.toMap(),
-                    'friendRequestStatus':
-                        friendRequestWithLoggedInUser?['status'] ?? 'none',
-                    'userId': friendRequestWithLoggedInUser?['userId'],
-                  },
+                SizedBox(
+                  width: double.infinity,
+                  child: FriendRequestButton(
+                    friend: {
+                      ...user.toMap(),
+                      'friendRequestStatus':
+                          friendRequestWithLoggedInUser?['status'] ?? 'none',
+                      'userId': friendRequestWithLoggedInUser?['userId'],
+                    },
+                    useWhiteStyle: true,
+                  ),
+                ),
+              ],
+
+              // Action buttons (for logged-in user)
+              if (isLoggedInUser) ...[
+                const SizedBox(height: AppSizes.spacing16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          final userId = Provider.of<LoggedInUserProvider>(context, listen: false).user.id;
+                          final userName = Provider.of<LoggedInUserProvider>(context, listen: false).user.name;
+
+                          // Deep link format: nycgreen://user/{userId}
+                          final deepLink = 'nycgreen://user/$userId';
+
+                          // TODO: Replace with your actual app store links when published
+                          final appStoreLink = 'https://apps.apple.com/app/nycgreen'; // iOS App Store
+                          //final playStoreLink = 'https://play.google.com/store/apps/details?id=com.example.nyc_parks'; // Android Play Store
+
+                          Share.share(
+                            'Check out $userName\'s profile on NYC Green!\n\n'
+                            'Open in app: $deepLink\n\n'
+                            'Don\'t have the app?\n'
+                            'iOS: $appStoreLink\n',
+                            //'Android: $playStoreLink',
+                            subject: 'Connect with $userName on NYC Green',
+                          );
+                        },
+                        icon: const Icon(Icons.share, size: 20),
+                        label: const Text('Share Profile'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+                          minimumSize: const Size(0, AppSizes.buttonHeightMedium),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppBorderRadius.medium,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.spacing12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (dialogContext) => AlertDialog(
+                              title: Text(
+                                'Logout',
+                                style: AppTypography.titleLarge,
+                              ),
+                              content: Text(
+                                'Are you sure you want to logout?',
+                                style: AppTypography.bodyMedium,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppBorderRadius.medium,
+                              ),
+                              actionsOverflowButtonSpacing: AppSizes.spacing8,
+                              actions: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        onPressed: () => Navigator.pop(dialogContext),
+                                        style: OutlinedButton.styleFrom(
+                                          side: BorderSide(
+                                            color: AppColors.textSecondary.withValues(alpha: 0.3),
+                                          ),
+                                          minimumSize: const Size(0, AppSizes.buttonHeightMedium),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: AppBorderRadius.medium,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Cancel',
+                                          style: AppTypography.labelLarge.copyWith(
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSizes.spacing12),
+                                    Expanded(
+                                      child: FilledButton(
+                                        onPressed: () {
+                                          Navigator.pop(dialogContext);
+                                          AuthService().signOut(context);
+                                        },
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: AppColors.error,
+                                          minimumSize: const Size(0, AppSizes.buttonHeightMedium),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: AppBorderRadius.medium,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Logout',
+                                          style: AppTypography.labelLarge.copyWith(
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.logout, size: 20),
+                        label: const Text('Logout'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+                          minimumSize: const Size(0, AppSizes.buttonHeightMedium),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppBorderRadius.medium,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ],
@@ -510,10 +649,42 @@ Future<void> fetchUserInfo({bool showLoader = true}) async {
     );
   }
 
-  Widget _buildFriendsTab() {
+  List<Map<String, dynamic>> _getAcceptedFriends() {
     final friends = userInfo['friends'] as List? ?? [];
+    return friends.where((f) => f['friendRequestStatus'] == 'accepted').toList().cast<Map<String, dynamic>>();
+  }
 
-    if (friends.isEmpty) {
+  List<Map<String, dynamic>> _getPendingFriends() {
+    final friends = userInfo['friends'] as List? ?? [];
+    return friends.where((f) => f['friendRequestStatus'] == 'pending').toList().cast<Map<String, dynamic>>();
+  }
+
+  String _formatFriendDate(String? dateString) {
+    if (dateString == null) return '';
+    try {
+      final date = DateTime.parse(dateString);
+      final now = DateTime.now();
+      final difference = now.difference(date);
+
+      if (difference.inDays < 30) {
+        return 'Friends for ${difference.inDays} days';
+      } else if (difference.inDays < 365) {
+        final months = (difference.inDays / 30).floor();
+        return 'Friends for $months month${months > 1 ? 's' : ''}';
+      } else {
+        final years = (difference.inDays / 365).floor();
+        return 'Friends for $years year${years > 1 ? 's' : ''}';
+      }
+    } catch (e) {
+      return '';
+    }
+  }
+
+  Widget _buildFriendsTab() {
+    final acceptedFriends = _getAcceptedFriends();
+    final pendingFriends = _getPendingFriends();
+
+    if (acceptedFriends.isEmpty && pendingFriends.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -535,27 +706,148 @@ Future<void> fetchUserInfo({bool showLoader = true}) async {
       );
     }
 
-    return ListView.separated(
+    return ListView(
       padding: EdgeInsets.zero,
-      itemCount: friends.length,
-      separatorBuilder: (context, index) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing24),
-        child: Divider(
-          height: 1,
-          thickness: 1,
-          color: AppColors.textSecondary.withValues(alpha: 0.15),
-        ),
-      ),
-      itemBuilder: (context, index) {
-        final friend = friends[index];
-        final friendUser = User.fromMap(friend);
+      children: [
+        // Pending Requests Section (only show if logged in user and has pending)
+        if (isLoggedInUser && pendingFriends.isNotEmpty) ...[
+          Container(
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.spacing16,
+              AppSizes.spacing16,
+              AppSizes.spacing16,
+              AppSizes.spacing8,
+            ),
+            color: AppColors.background,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.person_add_outlined,
+                  size: 20,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(width: AppSizes.spacing8),
+                Text(
+                  'Pending Requests',
+                  style: AppTypography.titleMedium.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(width: AppSizes.spacing8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.spacing8,
+                    vertical: AppSizes.spacing2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.2),
+                    borderRadius: AppBorderRadius.round,
+                  ),
+                  child: Text(
+                    '${pendingFriends.length}',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...pendingFriends.asMap().entries.map((entry) {
+            final index = entry.key;
+            final friend = entry.value;
+            final friendUser = User.fromMap(friend);
 
-        return _buildFriendCard(friendUser, friend);
-      },
+            return Column(
+              children: [
+                _buildFriendCard(friendUser, friend, showDate: false),
+                if (index < pendingFriends.length - 1)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing24),
+                    child: Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: AppColors.textSecondary.withValues(alpha: 0.15),
+                    ),
+                  ),
+              ],
+            );
+          }),
+          const SizedBox(height: AppSizes.spacing16),
+        ],
+
+        // Friends Section
+        if (acceptedFriends.isNotEmpty) ...[
+          Container(
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.spacing16,
+              AppSizes.spacing16,
+              AppSizes.spacing16,
+              AppSizes.spacing8,
+            ),
+            color: AppColors.background,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.people,
+                  size: 20,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(width: AppSizes.spacing8),
+                Text(
+                  'Friends',
+                  style: AppTypography.titleMedium.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(width: AppSizes.spacing8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.spacing8,
+                    vertical: AppSizes.spacing2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: AppBorderRadius.round,
+                  ),
+                  child: Text(
+                    '${acceptedFriends.length}',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...acceptedFriends.asMap().entries.map((entry) {
+            final index = entry.key;
+            final friend = entry.value;
+            final friendUser = User.fromMap(friend);
+
+            return Column(
+              children: [
+                _buildFriendCard(friendUser, friend, showDate: true),
+                if (index < acceptedFriends.length - 1)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacing24),
+                    child: Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: AppColors.textSecondary.withValues(alpha: 0.15),
+                    ),
+                  ),
+              ],
+            );
+          }),
+        ],
+      ],
     );
   }
 
-  Widget _buildFriendCard(User friend, Map<String, dynamic> friendData) {
+  Widget _buildFriendCard(User friend, Map<String, dynamic> friendData, {bool showDate = false}) {
+    final friendDate = showDate ? _formatFriendDate(friendData['createdAt']) : '';
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -580,7 +872,6 @@ Future<void> fetchUserInfo({bool showLoader = true}) async {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: AppSizes.spacing4),
                   Text(
                     friend.name,
                     style: AppTypography.titleLarge.copyWith(
@@ -588,7 +879,14 @@ Future<void> fetchUserInfo({bool showLoader = true}) async {
                     ),
                   ),
                   const SizedBox(height: AppSizes.spacing4),
-                  if (isLoggedInUser)
+                  if (showDate && friendDate.isNotEmpty)
+                    Text(
+                      friendDate,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    )
+                  else if (isLoggedInUser)
                     FriendRequestButton(friend: friendData)
                   else
                     Text(
