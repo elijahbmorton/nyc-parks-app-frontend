@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:nyc_parks/main.dart';
 import 'package:nyc_parks/models/logged_in_user.dart';
 import 'package:nyc_parks/providers/logged_in_user_provider.dart';
+import 'package:nyc_parks/screens/login_screen.dart';
 import 'package:nyc_parks/screens/signup_screen.dart';
 import 'package:nyc_parks/utils/constants.dart';
 import 'package:nyc_parks/utils/utils.dart';
@@ -57,7 +58,13 @@ class AuthService {
         response: res,
         onSuccess: () {
           showSnackBar(
-            'Account created! Login with the same credentials!',
+            'Account created! Login with the same credentials.',
+          );
+          // Navigate to login screen after successful signup
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const LoginScreen(),
+            ),
           );
         },
       );
@@ -73,7 +80,7 @@ class AuthService {
   }) async {
     try {
       if (email.isEmpty || password.isEmpty) {
-        showSnackBar("Please supply a valid email and password");
+        showSnackBar("Please supply a valid username and password");
         return;
       }
 

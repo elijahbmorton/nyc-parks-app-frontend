@@ -26,21 +26,27 @@ class ParksProvider extends ChangeNotifier {
   }) {
     return parks.expand((park) {
       Color color = AppColors.primary;
-      
+      double fillOpacity = 0.2;
+      double borderWidth = 1.5;
+
       // Pink for favorites (takes priority)
       if (favoriteParkIds.contains(park.GlobalID)) {
         color = AppColors.favorite;
+        fillOpacity = 0.35;
+        borderWidth = 2.0;
       }
-      // Blue for reviewed/highlighted
+      // Bright blue for reviewed/visited
       else if (highlightedParkIds.contains(park.GlobalID)) {
-        color = AppColors.accent;
+        color = AppColors.visitedPark;
+        fillOpacity = 0.4; // Higher opacity for better visibility
+        borderWidth = 2.0; // Thicker border
       }
-      
+
       return polygonsFromWktMultiPolygon(
         park,
-        fillColor: color.withValues(alpha: 0.2),
+        fillColor: color.withValues(alpha: fillOpacity),
         borderColor: color,
-        borderStrokeWidth: 1.5,
+        borderStrokeWidth: borderWidth,
       );
     }).toList();
   }

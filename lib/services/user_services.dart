@@ -5,6 +5,7 @@ import 'package:nyc_parks/models/user.dart';
 import 'package:nyc_parks/providers/logged_in_user_provider.dart';
 import 'package:nyc_parks/utils/constants.dart';
 import 'package:nyc_parks/utils/utils.dart';
+import 'package:nyc_parks/utils/api.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:nyc_parks/services/auth_services.dart';
@@ -16,21 +17,16 @@ class UserService {
     required int userId
   }) async {
     try {
-      String token = await AuthService.getToken() ?? '';
-
-      // TODO: Fix this uri var
-      //var uri = Uri.http(Constants.uriNoProtocol, '/api/user/userInfo', { 'userId': user.id });
-      var uri = 'http://localhost:5200/api/user/userInfo?userId=${userId}';
-      http.Response res = await http.get(
-        Uri.parse(uri),
-        headers: <String, String>{'Content-Type': 'application/json; charset=UTF-8', 'x-auth-token': token},
+      http.Response res = await getRequest(
+        apiPath: '/user/userInfo',
+        queryParameters: { 'userId': userId },
       );
 
       httpErrorHandle(
         response: res,
         onSuccess: () async {},
       );
-      
+
       return json.decode(res.body);
     } catch (e) {
       print(e);

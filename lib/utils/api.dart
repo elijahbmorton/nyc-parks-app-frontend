@@ -17,8 +17,8 @@ Future<http.Response> getRequest({
   final stringQueryParams = queryParameters?.map(
     (key, value) => MapEntry(key, value.toString()),
   );
-  
-  final uri = Uri.http(Constants.uriNoProtocol, '/api$apiPath', stringQueryParams);
+
+  final uri = Uri.https(Constants.uriNoProtocol, '/parksappapi/api$apiPath', stringQueryParams);
   final token = await getToken();
 
   return await http.get(
@@ -37,8 +37,8 @@ Future<http.Response> postRequest({
   final stringQueryParams = queryParameters?.map(
     (key, value) => MapEntry(key, value.toString()),
   );
-  
-  final uri = Uri.http(Constants.uriNoProtocol, '/api$apiPath', stringQueryParams);
+
+  final uri = Uri.https(Constants.uriNoProtocol, '/parksappapi/api$apiPath', stringQueryParams);
   final token = await getToken();
 
   return await http.post(

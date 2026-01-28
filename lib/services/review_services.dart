@@ -65,9 +65,7 @@ class ReviewService {
 
       String token = await AuthService.getToken() ?? '';
 
-      // TODO: This might need to be https?? in prod
-      // And in other places. Also fix having to put /api here
-      var uri = Uri.http(Constants.uriNoProtocol, '/api/review/reviewsFromPark', queryParameters);
+      var uri = Uri.https(Constants.uriNoProtocol, '/parksappapi/api/review/reviewsFromPark', queryParameters);
       http.Response res = await http.get(
         uri,
         headers: <String, String>{'Content-Type': 'application/json; charset=UTF-8', 'x-auth-token': token},

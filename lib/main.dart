@@ -144,7 +144,7 @@ class _MyAppState extends State<MyApp> {
       scaffoldMessengerKey: messengerKey,
       title: 'NYC Green',
       theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.light, // Force light mode on all devices
       home: Builder(
         builder: (context) {
           if (auth.isCheckingAuth) {

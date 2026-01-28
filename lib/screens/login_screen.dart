@@ -92,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Email field
                   Text(
-                    'Email',
+                    'Username',
                     style: AppTypography.labelLarge.copyWith(
                       color: AppColors.textPrimary,
                     ),
@@ -100,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: AppSizes.spacing8),
                   CustomTextField(
                     controller: emailController,
-                    hintText: 'Enter your email',
+                    hintText: 'Enter your username',
                   ),
 
                   const SizedBox(height: AppSizes.spacing24),

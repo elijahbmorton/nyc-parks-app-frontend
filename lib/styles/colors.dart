@@ -38,6 +38,7 @@ class AppColors {
   static const Color mapMarker = Color(0xFF2D6A4F);
   static const Color mapMarkerSelected = Color(0xFFE63946);
   static const Color mapOverlay = Color(0x802D6A4F);
+  static const Color visitedPark = Color(0xFF0077B6); // Bright blue for visited parks on map
 
   // Rating stars
   static const Color starFilled = Color(0xFFE9C46A);

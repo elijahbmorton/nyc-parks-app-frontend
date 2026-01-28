@@ -10,6 +10,7 @@ import 'package:nyc_parks/screens/user_screen.dart';
 import 'package:nyc_parks/services/friend_services.dart';
 import 'package:nyc_parks/services/map_services.dart';
 import 'package:nyc_parks/services/user_services.dart';
+import 'package:nyc_parks/utils/hybrid_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter/material.dart';
 import 'package:nyc_parks/styles/sizes.dart';
@@ -39,6 +40,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   List<String> friendsFavoriteParkIds = [];
   bool locationPermissionGranted = false;
   MapViewMode viewMode = MapViewMode.myParks;
+  bool attributionExpanded = false;
 
   @override
   void initState() {
@@ -51,14 +53,18 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       // Try to get location permission
       try {
         await determinePosition();
-        setState(() {
-          locationPermissionGranted = true;
-        });
+        if (mounted) {
+          setState(() {
+            locationPermissionGranted = true;
+          });
+        }
       } catch (e) {
         print("Location not available: $e");
-        setState(() {
-          locationPermissionGranted = false;
-        });
+        if (mounted) {
+          setState(() {
+            locationPermissionGranted = false;
+          });
+        }
       }
 
       // Check for pending map zoom after initialization
@@ -107,17 +113,19 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       if (userInfo != null && userInfo['Reviews'] != null) {
         final reviews = userInfo['Reviews'] as List;
 
-        setState(() {
-          myReviewedParkIds =
-              reviews.map((review) => review['parkId'] as String).toList();
+        if (mounted) {
+          setState(() {
+            myReviewedParkIds =
+                reviews.map((review) => review['parkId'] as String).toList();
 
-          // Extract favorite parks
-          myFavoriteParkIds = reviews
-              .where((review) =>
-                  review['favorite'] == true || review['favorite'] == 1)
-              .map((review) => review['parkId'] as String)
-              .toList();
-        });
+            // Extract favorite parks
+            myFavoriteParkIds = reviews
+                .where((review) =>
+                    review['favorite'] == true || review['favorite'] == 1)
+                .map((review) => review['parkId'] as String)
+                .toList();
+          });
+        }
       }
     } catch (e) {
       print("Failed to load reviewed parks: $e");
@@ -131,7 +139,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       final friendsParksData =
           await friendService.getFriendsParks(userId: loggedInUserId);
 
-      if (friendsParksData != null) {
+      if (friendsParksData != null && mounted) {
         setState(() {
           friendsReviewedParkIds =
               (friendsParksData['reviewedParkIds'] as List?)
@@ -200,24 +208,20 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           ),
           children: [
             TileLayer(
-              // Use local tiles stored in assets
-              tileProvider: AssetTileProvider(),
-              urlTemplate: 'assets/tiles/{z}/{x}/{y}.png',
+              // Use hybrid tile provider: local assets up to z=15, OSM for z>15
+              tileProvider: HybridTileProvider(maxLocalZoom: 15),
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'parks_app.com.example.app',
               // Prevent error tile overlay from showing
               errorTileCallback: (tile, error, stackTrace) {
                 // Silently handle missing tiles
               },
             ),
-            // Old OpenStreetMap tile layer
-            // TileLayer(
-            //   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            //   userAgentPackageName: 'parks_app.com.example.app',
-            // ),
             MouseRegion(
-              hitTestBehavior: HitTestBehavior.deferToChild,
+              hitTestBehavior: HitTestBehavior.opaque,
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () async {
                   final LayerHitResult<Object>? result = parkHitNotifier.value;
                   if (result == null) return;
@@ -245,26 +249,49 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 child: PolygonLayer(
                   polygons: parksAsPolygons,
                   hitNotifier: parkHitNotifier,
+                  simplificationTolerance: 0,
                 ),
               ),
             ),
             // Location layer - only show if permission granted
             if (locationPermissionGranted) CurrentLocationLayer(),
-            RichAttributionWidget(
-              popupInitialDisplayDuration: const Duration(seconds: 3),
-              animationConfig: const ScaleRAWA(),
-              attributions: [
-                TextSourceAttribution(
-                  'OpenStreetMap contributors',
-                  textStyle: AppTypography.bodySmall.copyWith(
-                    color: AppColors.textPrimary,
-                    decoration: TextDecoration.none,
+          ],
+        ),
+        // Custom attribution widget
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    attributionExpanded = !attributionExpanded;
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    attributionExpanded ? '© OpenStreetMap' : '©',
+                    style: AppTypography.bodySmall.copyWith(
+                      fontSize: 10,
+                      color: AppColors.textSecondary,
+                      decoration: TextDecoration.none,
+                    ),
                   ),
                 ),
-              ],
-              alignment: AttributionAlignment.bottomRight,
+              ),
             ),
-          ],
+          ),
         ),
         // Top bar with search, title, and user icon
         Positioned(
